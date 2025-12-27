@@ -13,6 +13,23 @@ function App() {
         </span>
          <h1 className={styles.navTitle}>Finance Tracker</h1>
       </div>
+      <div className={styles.navLinks}>
+        <button 
+          className={`${styles.navLink} ${currentView === "dashboard" ? styles.navLinkActive : ""}`}
+          onClick={() => setCurrentView("dashboard")}>
+          Dashboard
+        </button>
+        <button 
+          className={`${styles.navLink} ${currentView === "transactions" ? styles.navLinkActive : ""}`}
+          onClick={() => setCurrentView("transactions")}>
+          Transactions
+        </button>
+        <button 
+          className={`${styles.navLink} ${currentView === "add" ? styles.navLinkActive : ""}`}
+          onClick={() => setCurrentView("add")}>
+          + Add Transaction
+        </button>
+      </div>
     </nav>
   </main>  
   );
