@@ -1,17 +1,17 @@
-export type TransactionType = "income" | "expense"; 
+export type TransactionType = "income" | "expense";
 // Example:
 // const tType: TransactionType = "income";
 
 export type Transaction = {
   id: string;
-  date: string; 
-  description: string; 
-  amount: number; 
-  category: string; 
-  type: TransactionType; 
-  accountId: string; 
-  currencyId: string; 
-  isProjected: false; 
+  date: string;
+  description: string;
+  amount: number;
+  category: string;
+  type: TransactionType;
+  accountId: string;
+  currencyId: string;
+  isProjected: false;
 };
 // Example:
 // const txn: Transaction = {
@@ -27,15 +27,15 @@ export type Transaction = {
 // };
 
 export type ProjectedTransaction = {
-  id: string; 
-  date: string; 
-  description: string; 
+  id: string;
+  date: string;
+  description: string;
   amount: number;
-  category: string; 
+  category: string;
   type: TransactionType;
-  accountId: string; 
+  accountId: string;
   currencyId: string;
-  isProjected: true; 
+  isProjected: true;
   frequency?: "once" | "monthly" | "quarterly" | "yearly";
 };
 // Example:
@@ -58,7 +58,7 @@ export type AnyTransaction = Transaction | ProjectedTransaction;
 
 export type Currency = {
   id: string;
-  code: string; 
+  code: string;
   symbol: string;
   name: string;
 };
@@ -67,8 +67,8 @@ export type Currency = {
 
 export type Institution = {
   id: string;
-  name: string; 
-  type: string; 
+  name: string;
+  type: string;
 };
 // Example:
 // const bank: Institution = { id: "inst_01", name: "First Bank", type: "bank" };
@@ -79,26 +79,26 @@ export type AccountType = "credit_card" | "savings" | "investment" | "checking";
 
 export type AccountSubType =
   | "credit_card_personal"
-  | "credit_card_corporate" 
-  | "savings_emergency" 
-  | "savings_goal" 
-  | "investment_stocks" 
+  | "credit_card_corporate"
+  | "savings_emergency"
+  | "savings_goal"
+  | "investment_stocks"
   | "investment_crypto"
-  | "investment_mutual_funds" 
-  | "checking_personal" 
-  | "checking_business"; 
+  | "investment_mutual_funds"
+  | "checking_personal"
+  | "checking_business";
 // Example:
 // const sub: AccountSubType = "checking_personal";
 
 export type Account = {
-  id: string; 
-  name: string; 
+  id: string;
+  name: string;
   type: AccountType;
   subType: AccountSubType;
   institutionId: string;
   currencyId: string;
   balance?: number;
-  createdAt: string; 
+  createdAt: string;
 };
 // Example:
 // const acc: Account = {
@@ -113,13 +113,13 @@ export type Account = {
 // };
 
 export type AccountSummary = {
-  accountId: string; 
-  accountName: string; 
+  accountId: string;
+  accountName: string;
   currencyId: string;
   balance: number;
-  totalIncome: number; 
-  totalExpense: number; 
-  net: number; 
+  totalIncome: number;
+  totalExpense: number;
+  net: number;
 };
 // Example:
 // const summary: AccountSummary = {
@@ -135,12 +135,12 @@ export type AccountSummary = {
 export type Category = {
   id: string;
   name: string;
-  type: TransactionType; 
+  type: TransactionType;
   parentId?: string;
-  description?: string; 
+  description?: string;
   keywords?: string[];
   icon?: string;
-  color?: string; 
+  color?: string;
 };
 // Example:
 // const cat: Category = {
@@ -170,9 +170,9 @@ export type CategoryPattern = {
 // };
 
 export type CategoryAggregate = {
-  category: string; 
+  category: string;
   actualAmount: number;
-  projectedAmount: number; 
+  projectedAmount: number;
   percentage?: number;
 };
 // Example:
@@ -185,12 +185,12 @@ export type CategoryAggregate = {
 
 export type Goal = {
   id: string;
-  name: string; 
-  targetAmount: number; 
-  currentAmount?: number; 
+  name: string;
+  targetAmount: number;
+  currentAmount?: number;
   targetDate?: string;
-  accountId?: string; 
-  createdAt: string; 
+  accountId?: string;
+  createdAt: string;
 };
 // Example:
 // const goal: Goal = {
@@ -205,10 +205,10 @@ export type Goal = {
 
 export type MonthlyAggregate = {
   month: string;
-  actualIncome: number; 
-  projectedIncome: number; 
-  actualExpense: number; 
-  projectedExpense: number; 
+  actualIncome: number;
+  projectedIncome: number;
+  actualExpense: number;
+  projectedExpense: number;
 };
 // Example:
 // const monthAgg: MonthlyAggregate = {
