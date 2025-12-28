@@ -1,3 +1,4 @@
+
 import Dexie from "dexie";
 
 type AppStateItem = {
