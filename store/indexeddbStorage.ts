@@ -1,9 +1,8 @@
-
 import Dexie from "dexie";
 
 type AppStateItem = {
   value: string | PromiseLike<string | null> | null;
-  id: string;
+  id?: string;
   key: string;
 };
 

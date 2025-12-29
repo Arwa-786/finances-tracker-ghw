@@ -37,7 +37,7 @@ function App() {
         </div>
       </nav>
       <section className={styles.main}>
-        {currentView === "dashboard" && <Dashboard scv={setCurrentView} cv={currentView} />}
+        {currentView === "dashboard" && <Dashboard />}
         {currentView === "transactions" && <Transactions />}
         {currentView === "add" && <TransactionForm />}
       </section>
