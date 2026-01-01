@@ -2,17 +2,19 @@ import { useEffect, useState } from "react";
 import { useTransactionsStore } from "../../../store/transactionsStore";
 import { useAccountsStore } from "../../../store/accountStore";
 import { useCategoriesStore } from "../../../store/categoriesStore";
-// import CategoryChart, { type CategoryPoint } from "../charts/CategoryCharts";
-// import { groupByMonth, groupByCategory } from "../../../utils/aggregations";
+import CategoryChart, { type CategoryPoint } from "../charts/CategoryCharts";
+import { groupByMonth, groupByCategory } from "../../../utils/aggregations";
 import styles from "./Dashboard.module.css";
-// import TimeSeriesChart, { type TimePoint } from "../charts/TimeSeriesChart";
-// import YearlyTrendsChart, { type YearPoint } from "../charts/YearlyTrendsChart";
-
-// type TimePoint = { time: string; value: number };
-// type CategoryPoint = { category: string; value: number };
+import TimeSeriesChart, { type TimePoint } from "../charts/TimeSeriesChart";
+import YearlyTrendsChart, { type YearPoint } from "../charts/YearlyTrendsChart";
+import {
+  generateAndSaveProjections,
+  loadHistoricalYearlyData,
+  type HistoricalYearlyData,
+  type ProjectionResult,
+} from "../../../ml/projectedData";
 
 const Dashboard = () => {
-  // const [selectedCurrency, setSelectedCurrency] = useState<string>("USD");
   const [isHydrated, setIsHydrated] = useState(() => {
     return (
       useTransactionsStore.persist.hasHydrated() &&
@@ -20,6 +22,10 @@ const Dashboard = () => {
       useCategoriesStore.persist.hasHydrated()
     );
   });
+  const [projections, setProjections] = useState<ProjectionResult | null>(null);
+  const [isGeneratingProjections, setIsGeneratingProjections] = useState(false);
+  const [projectionError, setProjectionError] = useState<string | null>(null);
+  const [historicalYearlyData, setHistoricalYearlyData] = useState<HistoricalYearlyData[]>([]);
 
   useEffect(() => {
     const unsubTransactions = useTransactionsStore.persist.onFinishHydration(() => {
@@ -60,7 +66,7 @@ const Dashboard = () => {
   const getActualTransactions = useTransactionsStore((s) => s.getActualTransactions);
   const getProjectedTransactions = useTransactionsStore((s) => s.getProjectedTransactions);
   const currencies = useAccountsStore((s) => s.currencies);
-  // const getCategoryById = useCategoriesStore((s) => s.getCategoryById);
+  const getCategoryById = useCategoriesStore((s) => s.getCategoryById);
 
   const [selectedCurrency, setSelectedCurrency] = useState<string>(() => {
     const actual = getActualTransactions();
@@ -84,56 +90,107 @@ const Dashboard = () => {
 
   const actualExpenses = actualTxs.filter((t) => t.type === "expense");
   const actualIncome = actualTxs.filter((t) => t.type === "income");
-  // const projectedExpenses = projectedTxs.filter((t) => t.type === "expense");
-  // const projectedIncome = projectedTxs.filter((t) => t.type === "income");
+  const projectedExpenses = projectedTxs.filter((t) => t.type === "expense");
+  const projectedIncome = projectedTxs.filter((t) => t.type === "income");
 
-  // const monthlyData = groupByMonth([
-  //   ...actualExpenses,
-  //   ...projectedExpenses,
-  //   ...actualIncome,
-  //   ...projectedIncome,
-  // ]);
+  const monthlyData = groupByMonth([
+    ...actualExpenses,
+    ...projectedExpenses,
+    ...actualIncome,
+    ...projectedIncome,
+  ]);
 
-  // const expensesActualData: TimePoint[] = monthlyData.map((m) => ({
-  //   time: m.month,
-  //   value: m.actualExpense,
-  // }));
-  // const expensesProjectedData: TimePoint[] = monthlyData.map((m) => ({
-  //   time: m.month,
-  //   value: m.projectedExpense,
-  // }));
-  // const incomeActualData: TimePoint[] = monthlyData.map((m) => ({
-  //   time: m.month,
-  //   value: m.actualIncome,
-  // }));
-  // const incomeProjectedData: TimePoint[] = monthlyData.map((m) => ({
-  //   time: m.month,
-  //   value: m.projectedIncome,
-  // }));
+  const expensesActualData: TimePoint[] = monthlyData.map((m) => ({
+    time: m.month,
+    value: m.actualExpense,
+  }));
+  const expensesProjectedData: TimePoint[] = monthlyData.map((m) => ({
+    time: m.month,
+    value: m.projectedExpense,
+  }));
+  const incomeActualData: TimePoint[] = monthlyData.map((m) => ({
+    time: m.month,
+    value: m.actualIncome,
+  }));
+  const incomeProjectedData: TimePoint[] = monthlyData.map((m) => ({
+    time: m.month,
+    value: m.projectedIncome,
+  }));
 
-  // const categoryData = groupByCategory([...actualExpenses, ...projectedExpenses], {
-  //   type: "expense",
-  // });
+  const categoryData = groupByCategory([...actualExpenses, ...projectedExpenses], {
+    type: "expense",
+  });
 
-  // const getCategoryName = (categoryId: string): string => {
-  //   const category = getCategoryById(categoryId);
-  //   if (!category) return categoryId;
-  //   if (category.parentId) {
-  //     const parent = getCategoryById(category.parentId);
-  //     return parent ? `${parent.name} / ${category.name}` : category.name;
-  //   }
-  //   return category.name;
-  // };
+  const getCategoryName = (categoryId: string): string => {
+    const category = getCategoryById(categoryId);
+    if (!category) return categoryId;
+    if (category.parentId) {
+      const parent = getCategoryById(category.parentId);
+      return parent ? `${parent.name} / ${category.name}` : category.name;
+    }
+    return category.name;
+  };
 
-  // const expenseCategoryData: CategoryPoint[] = categoryData.map((c) => ({
-  //   category: getCategoryName(c.category),
-  //   value: c.actualAmount,
-  // }));
+  const expenseCategoryData: CategoryPoint[] = categoryData.map((c) => ({
+    category: getCategoryName(c.category),
+    value: c.actualAmount,
+  }));
 
-  // const expenseCategoryProjectedData: CategoryPoint[] = categoryData.map((c) => ({
-  //   category: getCategoryName(c.category),
-  //   value: c.projectedAmount,
-  // }));
+  const expenseCategoryProjectedData: CategoryPoint[] = categoryData.map((c) => ({
+    category: getCategoryName(c.category),
+    value: c.projectedAmount,
+  }));
+
+  const handleGenerateProjections = async () => {
+    setIsGeneratingProjections(true);
+    setProjectionError(null);
+
+    try {
+      const historical: HistoricalYearlyData[] = await loadHistoricalYearlyData(
+        activeCurrencyId.toUpperCase(),
+      );
+      setHistoricalYearlyData(historical);
+
+      const result = await generateAndSaveProjections(activeCurrencyId.toUpperCase());
+      setProjections(result);
+    } catch (error) {
+      console.error("Failed to generate projections:", error);
+      setProjectionError(error instanceof Error ? error.message : "Failed to generate projections");
+    } finally {
+      setIsGeneratingProjections(false);
+    }
+  };
+
+  const getProjectedYearlyData = (): YearPoint[] => {
+    if (!projections) return [];
+
+    const yearMap = new Map<string, { income: number; expenses: number }>();
+
+    for (const proj of projections.projections) {
+      const year = proj.monthKey.split("-")[0];
+      if (!yearMap.has(year)) {
+        yearMap.set(year, { income: 0, expenses: 0 });
+      }
+      const data = yearMap.get(year)!;
+      data.income += proj.projectedIncome;
+      data.expenses += proj.projectedExpenses;
+    }
+
+    return Array.from(yearMap.entries())
+      .map(([year, data]) => ({
+        year,
+        income: data.income,
+        expenses: data.expenses,
+      }))
+      .sort((a, b) => a.year.localeCompare(b.year));
+  };
+
+  const actualYearlyData: YearPoint[] = historicalYearlyData.map((d) => ({
+    year: d.year,
+    income: d.income,
+    expenses: d.expenses,
+  }));
+  const projectedYearlyData = getProjectedYearlyData();
 
   const totalIncome = actualIncome.reduce((sum, t) => sum + t.amount, 0);
   const totalExpenses = actualExpenses.reduce((sum, t) => sum + t.amount, 0);
@@ -157,30 +214,24 @@ const Dashboard = () => {
 
   return (
     <div className={styles.dashboard}>
-      <div className={styles.headerRow}>
+      <div className={styles.header}>
         <h1 className={styles.title}>Dashboard</h1>
-        <p className={styles.subtitle}>Overview of your financial data</p>
-        <label htmlFor="currencySelector" className={styles.srOnly}>
-          Currency
-        </label>
-        <select
-          name="currency"
-          id="currencySelector"
-          aria-label="Currency selector"
-          title="Select currency"
-          value={selectedCurrency}
-          onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-            setSelectedCurrency(e.target.value)
-          }
-          className={styles.currencySelector}
-        >
-          {currencies.map((curr) => (
-            <option key={curr.id} value={curr.id}>
-              {curr.code} ({curr.symbol})
-            </option>
-          ))}
-        </select>
+        <div className={styles.headerRow}>
+          <p className={styles.subtitle}>Overview of your financial data</p>
+          <select
+            value={selectedCurrency}
+            onChange={(e) => setSelectedCurrency(e.target.value)}
+            className={styles.currencySelector}
+          >
+            {currencies.map((curr) => (
+              <option key={curr.id} value={curr.id}>
+                {curr.code} ({curr.symbol})
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
+
       <div className={styles.summaryCards}>
         <div className={styles.card}>
           <div className={styles.cardLabel}>Total Income</div>
@@ -211,29 +262,78 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
+
+      <div className={styles.projectionSection}>
+        <button
+          onClick={() => void handleGenerateProjections()}
+          disabled={isGeneratingProjections}
+          className={styles.projectionButton}
+          style={{
+            padding: "12px 24px",
+            fontSize: "16px",
+            fontWeight: 600,
+            backgroundColor: isGeneratingProjections ? "#9ca3af" : "#3b82f6",
+            color: "white",
+            border: "none",
+            borderRadius: "8px",
+            cursor: isGeneratingProjections ? "not-allowed" : "pointer",
+            marginBottom: "16px",
+          }}
+        >
+          {isGeneratingProjections ? "Generating Projections..." : "Generate Projected Earnings"}
+        </button>
+
+        {projectionError && (
+          <div style={{ color: "#ef4444", marginBottom: "16px" }}>Error: {projectionError}</div>
+        )}
+
+        {projections && !isGeneratingProjections && (
+          <div style={{ marginBottom: "16px", color: "#6b7280" }}>
+            Last updated: {new Date(projections.trainingDate).toLocaleString()} • Based on{" "}
+            {projections.historicalMonths} months of data
+          </div>
+        )}
+      </div>
+
+      {actualYearlyData.length > 0 && (
+        <div className={styles.chartCard} style={{ marginBottom: "24px" }}>
+          <h3 className={styles.chartTitle}>Yearly Trends</h3>
+          <p className={styles.chartSubtitle}>
+            Total income and expenses per year (historical + projected)
+          </p>
+          <div className={styles.chartContainer}>
+            <YearlyTrendsChart
+              height={300}
+              actualData={actualYearlyData}
+              projectedData={projectedYearlyData}
+            />
+          </div>
+        </div>
+      )}
+
       <div className={styles.chartsGrid}>
         <div className={styles.chartCard}>
           <h3 className={styles.chartTitle}>Monthly Trends</h3>
           <p className={styles.chartSubtitle}>Income and expenses over time</p>
           <div className={styles.chartContainer}>
-            {/* <TimeSeriesChart
-      height={300}
-      expensesActual={expensesActualData}
-      expensesProjected={expensesProjectedData}
-      incomeActual={incomeActualData}
-      incomeProjected={incomeProjectedData}
-    /> */}
+            <TimeSeriesChart
+              height={300}
+              expensesActual={expensesActualData}
+              expensesProjected={expensesProjectedData}
+              incomeActual={incomeActualData}
+              incomeProjected={incomeProjectedData}
+            />
           </div>
         </div>
         <div className={styles.chartCard}>
           <h3 className={styles.chartTitle}>Expense Categories</h3>
           <p className={styles.chartSubtitle}>Breakdown by category</p>
           <div className={styles.chartContainer}>
-            {/* <CategoryChart
-      height={300}
-      dataActual={expenseCategoryData}
-      dataProjected={expenseCategoryProjectedData}
-    /> */}
+            <CategoryChart
+              height={300}
+              dataActual={expenseCategoryData}
+              dataProjected={expenseCategoryProjectedData}
+            />
           </div>
         </div>
       </div>

@@ -8,7 +8,7 @@ import type {
   Institution,
   ProjectedTransaction,
   Transaction,
-} from "../types/models";
+} from "../../types/models";
 import { v4 as uuidv4 } from "uuid";
 
 export const seedCurrencies: Currency[] = [
